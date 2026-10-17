@@ -1,394 +1,557 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sad Music Library</title>
+
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Music Library</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      background: #101010;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
-
-    header {
-      padding: 25px;
-      background: #181818;
-      border-bottom: 1px solid #303030;
-    }
-
-    header h1 {
-      margin: 0 0 8px;
-      font-size: 27px;
-    }
-
-    header p {
-      color: #aaa;
-      margin: 0;
-    }
-
-    main {
-      max-width: 1000px;
-      margin: auto;
-      padding: 24px;
-    }
-
-    .controls {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    button, .upload, input {
-      border: 1px solid #444;
-      background: #222;
-      color: white;
-      padding: 12px 15px;
-      border-radius: 9px;
-      font-size: 14px;
-    }
-
-    button, .upload {
-      cursor: pointer;
-    }
-
-    button:hover, .upload:hover {
-      background: #333;
-    }
-
-    .upload {
-      display: inline-block;
-    }
-
-    input[type="search"] {
-      flex: 1;
-      min-width: 180px;
-    }
-
-    h2 {
-      font-size: 18px;
-      margin-top: 28px;
-    }
-
-    #status {
-      color: #aaa;
-      font-size: 14px;
-      margin: 15px 0;
-    }
-
-    #playlist {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    .track {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-      padding: 13px;
-      border-radius: 10px;
-      background: #1b1b1b;
-      cursor: pointer;
-    }
-
-    .track:hover, .track.active {
-      background: #303030;
-    }
-
-    .track-icon {
-      width: 43px;
-      height: 43px;
-      display: grid;
-      place-items: center;
-      border-radius: 7px;
-      background: #383838;
-      font-size: 21px;
-    }
-
-    .track-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .track-name {
-      overflow-wrap: anywhere;
-      font-size: 14px;
-    }
-
-    .track-folder {
-      color: #999;
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    .player {
-      position: sticky;
-      bottom: 0;
-      padding: 18px 20px;
-      background: #202020;
-      border-top: 1px solid #444;
-    }
-
-    .player-inner {
-      max-width: 1000px;
-      margin: auto;
-    }
-
-    #nowPlaying {
-      font-size: 13px;
-      color: #ccc;
-      margin-bottom: 10px;
-      overflow-wrap: anywhere;
-    }
-
-    audio, video {
-      width: 100%;
-    }
-
-    video {
-      margin-top: 12px;
-      max-height: 400px;
-      background: #000;
-    }
-
-    .note {
-      color: #888;
-      font-size: 12px;
-      line-height: 1.6;
-      margin-top: 25px;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-  </style>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #090909;
+  --panel: #141414;
+  --panel2: #1d1d1d;
+  --text: #f5f5f5;
+  --muted: #a0a0a0;
+  --accent: #b8a0ff;
+  --border: #292929;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+header {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #101010;
+}
+h1 { margin: 0 0 8px; font-size: 27px; }
+.subtitle { color: var(--muted); font-size: 13px; }
+main { max-width: 1050px; margin: auto; padding: 20px; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+h2 { font-size: 17px; margin: 0 0 15px; }
+button, .file-button {
+  background: var(--panel2);
+  color: var(--text);
+  border: 1px solid #383838;
+  border-radius: 9px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+button:hover, .file-button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: #111; border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+input[type="search"] {
+  width: 100%;
+  padding: 13px;
+  border-radius: 9px;
+  border: 1px solid #383838;
+  background: #0d0d0d;
+  color: white;
+  margin-bottom: 14px;
+}
+.status { color: var(--muted); font-size: 13px; margin-top: 12px; overflow-wrap: anywhere; }
+#drivePath { color: var(--accent); font-size: 13px; margin: 12px 0; overflow-wrap: anywhere; }
+#fileList { display: flex; flex-direction: column; gap: 7px; }
+.file-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #101010;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.file-name { overflow-wrap: anywhere; font-size: 14px; }
+.file-kind { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.file-row button { flex-shrink: 0; }
+#nowPlaying { overflow-wrap: anywhere; color: var(--accent); margin-bottom: 12px; }
+audio, video { width: 100%; margin-top: 10px; }
+small { color: var(--muted); }
+footer { text-align: center; color: var(--muted); padding: 20px; font-size: 12px; }
+@media (max-width: 550px) {
+  main { padding: 12px; }
+  .panel { padding: 14px; }
+  .file-row { align-items: flex-start; }
+  .file-row button { padding: 9px; }
+}
+</style>
 </head>
 
 <body>
-  <header>
-    <h1>♫ My Music Library</h1>
-    <p>Your personal music collection</p>
-  </header>
+<header>
+  <h1>Sad Music Library</h1>
+  <div class="subtitle">Your music, your Drive, your personal library.</div>
+</header>
 
-  <main>
-    <div class="controls">
-      <label class="upload">
-        📁 Select Music Folder
-        <input id="folderInput" type="file"
-          accept="audio/*" multiple webkitdirectory>
-      </label>
-
-      <label class="upload">
-        🎵 Add Music Files
-        <input id="fileInput" type="file"
-          accept="audio/*" multiple>
-      </label>
-
-      <label class="upload">
-        🎬 Add Video
-        <input id="videoInput" type="file"
-          accept="video/*">
-      </label>
-
-      <button id="shuffleButton">🔀 Shuffle</button>
+<main>
+  <section class="panel">
+    <h2>Google Drive</h2>
+    <div class="actions">
+      <button class="primary" id="connectBtn" onclick="connectDrive()">Connect Google Drive</button>
+      <button id="rootBtn" onclick="openDriveRoot()" disabled>My Drive</button>
+      <button id="parentBtn" onclick="goParent()" disabled>Parent Folder</button>
+      <button id="nextPageBtn" onclick="loadNextPage()" hidden>Load More</button>
     </div>
+    <div class="status" id="driveStatus">Connect your Google account to browse your Drive files.</div>
+    <div id="drivePath"></div>
+    <div id="fileList"></div>
+  </section>
 
-    <input id="search" type="search"
-      placeholder="Search songs or folders...">
-
-    <h2>Your Collection</h2>
-    <div id="status">Select a music folder to get started.</div>
-    <div id="playlist"></div>
-
-    <h2>Your Video</h2>
-    <video id="videoPlayer" controls hidden></video>
-
-    <p class="note">
-      This website plays files selected from your device.
-      Keep your original music backed up in Google Drive.
-      For privacy, do not upload private files to this public
-      website repository.
-    </p>
-  </main>
-
-  <div class="player">
-    <div class="player-inner">
-      <div id="nowPlaying">Choose a song to start listening.</div>
-      <audio id="audioPlayer" controls preload="metadata"></audio>
+  <section class="panel">
+    <h2>Local Music</h2>
+    <div class="actions">
+      <label class="file-button">
+        Choose Audio Files
+        <input id="audioInput" type="file" accept="audio/*" multiple hidden>
+      </label>
+      <label class="file-button">
+        Choose Music Folder
+        <input id="folderInput" type="file" accept="audio/*" webkitdirectory multiple hidden>
+      </label>
+      <label class="file-button">
+        Choose Video
+        <input id="videoInput" type="file" accept="video/*" hidden>
+      </label>
+      <button id="shuffleBtn" onclick="shuffleLocal()">Shuffle Local Music</button>
     </div>
-  </div>
+    <div class="status" id="localStatus">Choose audio files or a folder from your device.</div>
+    <input id="searchInput" type="search" placeholder="Search local music..." style="margin-top:14px">
+    <div id="localList"></div>
+  </section>
 
-  <script>
-    const folderInput = document.getElementById("folderInput");
-    const fileInput = document.getElementById("fileInput");
-    const videoInput = document.getElementById("videoInput");
-    const playlist = document.getElementById("playlist");
-    const status = document.getElementById("status");
-    const search = document.getElementById("search");
-    const audio = document.getElementById("audioPlayer");
-    const video = document.getElementById("videoPlayer");
-    const nowPlaying = document.getElementById("nowPlaying");
+  <section class="panel">
+    <h2>Player</h2>
+    <div id="nowPlaying">Nothing playing yet</div>
+    <audio id="audioPlayer" controls preload="metadata"></audio>
+    <div class="actions" style="margin-top:12px">
+      <button onclick="playPrevious()">Previous</button>
+      <button onclick="playNext()">Next</button>
+      <button onclick="toggleShuffle()">Toggle Shuffle</button>
+    </div>
+    <div class="status" id="playerStatus"></div>
+  </section>
 
-    let tracks = [];
-    let currentIndex = -1;
-    let currentUrl = null;
+  <section class="panel">
+    <h2>Video Player</h2>
+    <video id="videoPlayer" controls playsinline></video>
+    <div class="status">Choose a local video using the Choose Video button above.</div>
+  </section>
+</main>
 
-    function addFiles(files) {
-      const audioFiles = Array.from(files).filter(file =>
-        file.type.startsWith("audio/") ||
-        /\.(mp3|wav|flac|m4a|aac|ogg|opus|wma|aiff)$/i.test(file.name)
-      );
+<footer>Personal music library</footer>
 
-      const existing = new Set(
-        tracks.map(track =>
-          track.file.name + "|" + track.file.size + "|" +
-          track.file.lastModified + "|" + track.path
-        )
-      );
+<script>
+/*
+  IMPORTANT:
+  Replace this value with your Google OAuth Web Client ID.
+  It should end with .apps.googleusercontent.com.
+*/
+const GOOGLE_CLIENT_ID = "PASTE_YOUR_CLIENT_ID_HERE";
 
-      for (const file of audioFiles) {
-        const path = file.webkitRelativePath || file.name;
-        const key = file.name + "|" + file.size + "|" +
-          file.lastModified + "|" + path;
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
-        if (!existing.has(key)) {
-          tracks.push({ file, path });
-          existing.add(key);
-        }
+let tokenClient = null;
+let accessToken = null;
+let currentFolderId = "root";
+let folderStack = [{ id: "root", name: "My Drive" }];
+let nextPageToken = null;
+let localTracks = [];
+let currentLocalIndex = -1;
+let currentDriveTrack = null;
+let currentAudioObjectUrl = null;
+let currentVideoObjectUrl = null;
+let shuffleEnabled = false;
+let searchQuery = "";
+
+const audioPlayer = document.getElementById("audioPlayer");
+const videoPlayer = document.getElementById("videoPlayer");
+const driveStatus = document.getElementById("driveStatus");
+const fileList = document.getElementById("fileList");
+const localList = document.getElementById("localList");
+
+function setDriveStatus(message) {
+  driveStatus.textContent = message;
+}
+
+function connectDrive() {
+  if (!GOOGLE_CLIENT_ID ||
+      GOOGLE_CLIENT_ID === "PASTE_YOUR_CLIENT_ID_HERE") {
+    setDriveStatus("Add your Google OAuth Client ID in the HTML first.");
+    return;
+  }
+
+  if (!window.google || !google.accounts || !google.accounts.oauth2) {
+    setDriveStatus("Google sign-in is loading. Please try again in a moment.");
+    return;
+  }
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: async (response) => {
+      if (response.error) {
+        setDriveStatus("Sign-in failed: " + response.error);
+        return;
       }
 
-      tracks.sort((a, b) =>
-        a.path.localeCompare(b.path, undefined, {
-          numeric: true,
-          sensitivity: "base"
-        })
-      );
+      accessToken = response.access_token;
+      document.getElementById("connectBtn").textContent = "Reconnect Google Drive";
+      document.getElementById("rootBtn").disabled = false;
+      document.getElementById("parentBtn").disabled = false;
 
-      renderTracks();
+      setDriveStatus("Connected. Loading My Drive...");
+      await openDriveRoot();
+    }
+  });
+
+  tokenClient.requestAccessToken({ prompt: "consent" });
+}
+
+async function driveRequest(url, options = {}) {
+  if (!accessToken) throw new Error("Connect Google Drive first.");
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: "Bearer " + accessToken
+    }
+  });
+
+  if (response.status === 401) {
+    accessToken = null;
+    throw new Error("Your Drive session expired. Please reconnect.");
+  }
+
+  if (!response.ok) {
+    let detail = "";
+    try {
+      const error = await response.json();
+      detail = error.error?.message || "";
+    } catch (_) {}
+    throw new Error(detail || `Google Drive error (${response.status}).`);
+  }
+
+  return response;
+}
+
+async function openDriveRoot() {
+  if (!accessToken) {
+    setDriveStatus("Connect Google Drive first.");
+    return;
+  }
+
+  currentFolderId = "root";
+  folderStack = [{ id: "root", name: "My Drive" }];
+  await listDriveFiles(false);
+}
+
+async function openDriveFolder(id, name) {
+  currentFolderId = id;
+  folderStack.push({ id, name });
+  await listDriveFiles(false);
+}
+
+async function goParent() {
+  if (folderStack.length <= 1) return;
+  folderStack.pop();
+  currentFolderId = folderStack[folderStack.length - 1].id;
+  await listDriveFiles(false);
+}
+
+function renderDrivePath() {
+  document.getElementById("drivePath").textContent =
+    folderStack.map(folder => folder.name).join(" / ");
+  document.getElementById("parentBtn").disabled =
+    !accessToken || folderStack.length <= 1;
+}
+
+async function listDriveFiles(append) {
+  if (!accessToken) return;
+
+  if (!append) {
+    fileList.innerHTML = "";
+    nextPageToken = null;
+  }
+
+  renderDrivePath();
+  setDriveStatus("Loading files from Google Drive...");
+  document.getElementById("nextPageBtn").hidden = true;
+
+  try {
+    const params = new URLSearchParams({
+      q: `'${currentFolderId}' in parents and trashed = false`,
+      pageSize: "100",
+      orderBy: "folder,name",
+      fields: "nextPageToken,files(id,name,mimeType,size,webViewLink)"
+    });
+
+    if (append && nextPageToken) {
+      params.set("pageToken", nextPageToken);
     }
 
-    function renderTracks() {
-      const query = search.value.toLowerCase();
+    const response = await driveRequest(
+      "https://www.googleapis.com/drive/v3/files?" + params.toString()
+    );
+    const data = await response.json();
+    nextPageToken = data.nextPageToken || null;
 
-      const filtered = tracks
-        .map((track, index) => ({ ...track, index }))
-        .filter(track => track.path.toLowerCase().includes(query));
+    const items = data.files || [];
 
-      playlist.replaceChildren();
-
-      status.textContent = tracks.length
-        ? `${tracks.length} songs in your library`
-        : "No music loaded yet. Select your music folder.";
-
-      if (!filtered.length && tracks.length) {
-        status.textContent = "No songs match your search.";
-      }
-
-      for (const track of filtered) {
-        const row = document.createElement("div");
-        row.className = "track" +
-          (track.index === currentIndex ? " active" : "");
-
-        const icon = document.createElement("div");
-        icon.className = "track-icon";
-        icon.textContent = "♫";
-
-        const info = document.createElement("div");
-        info.className = "track-info";
-
-        const name = document.createElement("div");
-        name.className = "track-name";
-        name.textContent = track.file.name;
-
-        const folder = document.createElement("div");
-        folder.className = "track-folder";
-        folder.textContent = track.path.includes("/")
-          ? track.path.substring(0, track.path.lastIndexOf("/"))
-          : "Music";
-
-        info.append(name, folder);
-        row.append(icon, info);
-
-        row.addEventListener("click", () => playTrack(track.index));
-        playlist.append(row);
-      }
+    if (!items.length && !append) {
+      fileList.innerHTML = '<div class="status">This folder is empty.</div>';
     }
 
-    function playTrack(index) {
-      if (index < 0 || index >= tracks.length) return;
+    items.forEach(file => {
+      const isFolder = file.mimeType === "application/vnd.google-apps.folder";
+      const isAudio = isAudioFile(file);
 
-      currentIndex = index;
-      const track = tracks[index];
+      const row = document.createElement("div");
+      row.className = "file-row";
 
-      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      const info = document.createElement("div");
+      info.className = "file-name";
 
-      currentUrl = URL.createObjectURL(track.file);
-      audio.src = currentUrl;
-      nowPlaying.textContent = "♫ " + track.file.name;
+      const name = document.createElement("div");
+      name.textContent = (isFolder ? "📁 " : isAudio ? "🎵 " : "📄 ") + file.name;
+      info.appendChild(name);
 
-      audio.play().catch(() => {
-        nowPlaying.textContent =
-          "Press Play to listen: " + track.file.name;
-      });
+      const kind = document.createElement("div");
+      kind.className = "file-kind";
+      kind.textContent = isFolder ? "Folder" :
+        isAudio ? "Audio file" : file.mimeType || "File";
+      info.appendChild(kind);
 
-      renderTracks();
+      const button = document.createElement("button");
+
+      if (isFolder) {
+        button.textContent = "Open";
+        button.onclick = () => openDriveFolder(file.id, file.name);
+      } else if (isAudio) {
+        button.textContent = "Play";
+        button.onclick = () => playDriveAudio(file);
+      } else {
+        button.textContent = "Open";
+        button.disabled = true;
+        button.title = "This file type is not supported by the audio player.";
+      }
+
+      row.appendChild(info);
+      row.appendChild(button);
+      fileList.appendChild(row);
+    });
+
+    document.getElementById("nextPageBtn").hidden = !nextPageToken;
+    setDriveStatus(`Loaded ${items.length} item(s).`);
+  } catch (error) {
+    setDriveStatus("Could not load Drive files: " + error.message);
+  }
+}
+
+function isAudioFile(file) {
+  const mime = (file.mimeType || "").toLowerCase();
+  const name = (file.name || "").toLowerCase();
+  return mime.startsWith("audio/") ||
+    /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|weba|aiff|wma)$/i.test(name);
+}
+
+async function loadNextPage() {
+  if (nextPageToken) await listDriveFiles(true);
+}
+
+async function playDriveAudio(file) {
+  try {
+    setDriveStatus("Loading audio: " + file.name);
+    document.getElementById("playerStatus").textContent =
+      "Downloading audio from Google Drive...";
+
+    const response = await driveRequest(
+      "https://www.googleapis.com/drive/v3/files/" +
+      encodeURIComponent(file.id) + "?alt=media"
+    );
+
+    const blob = await response.blob();
+
+    if (currentAudioObjectUrl) {
+      URL.revokeObjectURL(currentAudioObjectUrl);
     }
 
-    folderInput.addEventListener("change", event => {
-      addFiles(event.target.files);
-      folderInput.value = "";
-    });
+    currentAudioObjectUrl = URL.createObjectURL(blob);
+    currentDriveTrack = file;
+    currentLocalIndex = -1;
+    audioPlayer.src = currentAudioObjectUrl;
+    document.getElementById("nowPlaying").textContent =
+      "Google Drive: " + file.name;
+    document.getElementById("playerStatus").textContent =
+      "Ready to play.";
+    await audioPlayer.play();
+    setDriveStatus("Playing: " + file.name);
+  } catch (error) {
+    document.getElementById("playerStatus").textContent =
+      "Could not play this file: " + error.message;
+    setDriveStatus("Playback failed. " + error.message);
+  }
+}
 
-    fileInput.addEventListener("change", event => {
-      addFiles(event.target.files);
-      fileInput.value = "";
-    });
+/* Local music selection */
 
-    search.addEventListener("input", renderTracks);
+document.getElementById("audioInput").addEventListener("change", event => {
+  addLocalFiles(event.target.files);
+});
 
-    document.getElementById("shuffleButton")
-      .addEventListener("click", () => {
-        if (!tracks.length) {
-          status.textContent = "Select a music folder first.";
-          return;
-        }
+document.getElementById("folderInput").addEventListener("change", event => {
+  addLocalFiles(event.target.files);
+});
 
-        let next = Math.floor(Math.random() * tracks.length);
+function addLocalFiles(fileListInput) {
+  const files = Array.from(fileListInput || [])
+    .filter(file => file.type.startsWith("audio/") ||
+      /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|weba|aiff|wma)$/i.test(file.name));
 
-        if (tracks.length > 1 && next === currentIndex) {
-          next = (next + 1) % tracks.length;
-        }
+  if (!files.length) {
+    document.getElementById("localStatus").textContent =
+      "No supported audio files were found.";
+    return;
+  }
 
-        playTrack(next);
-      });
+  localTracks = files.map(file => ({
+    file,
+    name: file.webkitRelativePath || file.name
+  }));
 
-    audio.addEventListener("ended", () => {
-      if (currentIndex >= 0 && currentIndex < tracks.length - 1) {
-        playTrack(currentIndex + 1);
-      }
-    });
+  currentLocalIndex = -1;
+  renderLocalTracks();
+  document.getElementById("localStatus").textContent =
+    `${localTracks.length} audio file(s) ready.`;
+}
 
-    videoInput.addEventListener("change", event => {
-      const file = event.target.files[0];
-      if (!file) return;
+function renderLocalTracks() {
+  localList.innerHTML = "";
+  const filtered = localTracks.filter(track =>
+    track.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-      video.src = URL.createObjectURL(file);
-      video.hidden = false;
-      video.load();
-      video.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  </script>
+  if (!filtered.length) {
+    localList.innerHTML =
+      '<div class="status">No matching local tracks.</div>';
+    return;
+  }
+
+  filtered.forEach(track => {
+    const originalIndex = localTracks.indexOf(track);
+    const row = document.createElement("div");
+    row.className = "file-row";
+
+    const name = document.createElement("div");
+    name.className = "file-name";
+    name.textContent = track.name;
+
+    const button = document.createElement("button");
+    button.textContent = "Play";
+    button.onclick = () => playLocalTrack(originalIndex);
+
+    row.appendChild(name);
+    row.appendChild(button);
+    localList.appendChild(row);
+  });
+}
+
+document.getElementById("searchInput").addEventListener("input", event => {
+  searchQuery = event.target.value;
+  renderLocalTracks();
+});
+
+function playLocalTrack(index) {
+  if (!localTracks.length || !localTracks[index]) return;
+
+  currentLocalIndex = index;
+  currentDriveTrack = null;
+
+  if (currentAudioObjectUrl) {
+    URL.revokeObjectURL(currentAudioObjectUrl);
+  }
+
+  currentAudioObjectUrl = URL.createObjectURL(localTracks[index].file);
+  audioPlayer.src = currentAudioObjectUrl;
+  document.getElementById("nowPlaying").textContent =
+    "Local: " + localTracks[index].name;
+  document.getElementById("playerStatus").textContent = "";
+  audioPlayer.play().catch(() => {});
+}
+
+function playNext() {
+  if (!localTracks.length) return;
+
+  let next;
+  if (shuffleEnabled && localTracks.length > 1) {
+    do {
+      next = Math.floor(Math.random() * localTracks.length);
+    } while (next === currentLocalIndex);
+  } else {
+    next = (currentLocalIndex + 1 + localTracks.length) % localTracks.length;
+  }
+
+  playLocalTrack(next);
+}
+
+function playPrevious() {
+  if (!localTracks.length) return;
+  const previous = currentLocalIndex <= 0
+    ? localTracks.length - 1
+    : currentLocalIndex - 1;
+  playLocalTrack(previous);
+}
+
+function shuffleLocal() {
+  if (!localTracks.length) {
+    document.getElementById("localStatus").textContent =
+      "Choose local music first.";
+    return;
+  }
+
+  const index = Math.floor(Math.random() * localTracks.length);
+  playLocalTrack(index);
+}
+
+function toggleShuffle() {
+  shuffleEnabled = !shuffleEnabled;
+  document.getElementById("playerStatus").textContent =
+    "Shuffle " + (shuffleEnabled ? "enabled" : "disabled") + ".";
+}
+
+audioPlayer.addEventListener("ended", () => {
+  if (currentLocalIndex !== -1 && localTracks.length) {
+    playNext();
+  }
+});
+
+/* Local video */
+
+document.getElementById("videoInput").addEventListener("change", event => {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (currentVideoObjectUrl) URL.revokeObjectURL(currentVideoObjectUrl);
+
+  currentVideoObjectUrl = URL.createObjectURL(file);
+  videoPlayer.src = currentVideoObjectUrl;
+  videoPlayer.play().catch(() => {});
+});
+</script>
 </body>
 </html>
