@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Music Library</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #101010;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      padding: 25px;
+      background: #181818;
+      border-bottom: 1px solid #303030;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 27px;
+    }
+
+    header p {
+      color: #aaa;
+      margin: 0;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    button, .upload, input {
+      border: 1px solid #444;
+      background: #222;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 9px;
+      font-size: 14px;
+    }
+
+    button, .upload {
+      cursor: pointer;
+    }
+
+    button:hover, .upload:hover {
+      background: #333;
+    }
+
+    .upload {
+      display: inline-block;
+    }
+
+    input[type="search"] {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-top: 28px;
+    }
+
+    #status {
+      color: #aaa;
+      font-size: 14px;
+      margin: 15px 0;
+    }
+
+    #playlist {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .track {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 13px;
+      border-radius: 10px;
+      background: #1b1b1b;
+      cursor: pointer;
+    }
+
+    .track:hover, .track.active {
+      background: #303030;
+    }
+
+    .track-icon {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: #383838;
+      font-size: 21px;
+    }
+
+    .track-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .track-name {
+      overflow-wrap: anywhere;
+      font-size: 14px;
+    }
+
+    .track-folder {
+      color: #999;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .player {
+      position: sticky;
+      bottom: 0;
+      padding: 18px 20px;
+      background: #202020;
+      border-top: 1px solid #444;
+    }
+
+    .player-inner {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    #nowPlaying {
+      font-size: 13px;
+      color: #ccc;
+      margin-bottom: 10px;
+      overflow-wrap: anywhere;
+    }
+
+    audio, video {
+      width: 100%;
+    }
+
+    video {
+      margin-top: 12px;
+      max-height: 400px;
+      background: #000;
+    }
+
+    .note {
+      color: #888;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 25px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>♫ My Music Library</h1>
+    <p>Your personal music collection</p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <label class="upload">
+        📁 Select Music Folder
+        <input id="folderInput" type="file"
+          accept="audio/*" multiple webkitdirectory>
+      </label>
+
+      <label class="upload">
+        🎵 Add Music Files
+        <input id="fileInput" type="file"
+          accept="audio/*" multiple>
+      </label>
+
+      <label class="upload">
+        🎬 Add Video
+        <input id="videoInput" type="file"
+          accept="video/*">
+      </label>
+
+      <button id="shuffleButton">🔀 Shuffle</button>
+    </div>
+
+    <input id="search" type="search"
+      placeholder="Search songs or folders...">
+
+    <h2>Your Collection</h2>
+    <div id="status">Select a music folder to get started.</div>
+    <div id="playlist"></div>
+
+    <h2>Your Video</h2>
+    <video id="videoPlayer" controls hidden></video>
+
+    <p class="note">
+      This website plays files selected from your device.
+      Keep your original music backed up in Google Drive.
+      For privacy, do not upload private files to this public
+      website repository.
+    </p>
+  </main>
+
+  <div class="player">
+    <div class="player-inner">
+      <div id="nowPlaying">Choose a song to start listening.</div>
+      <audio id="audioPlayer" controls preload="metadata"></audio>
+    </div>
+  </div>
+
+  <script>
+    const folderInput = document.getElementById("folderInput");
+    const fileInput = document.getElementById("fileInput");
+    const videoInput = document.getElementById("videoInput");
+    const playlist = document.getElementById("playlist");
+    const status = document.getElementById("status");
+    const search = document.getElementById("search");
+    const audio = document.getElementById("audioPlayer");
+    const video = document.getElementById("videoPlayer");
+    const nowPlaying = document.getElementById("nowPlaying");
+
+    let tracks = [];
+    let currentIndex = -1;
+    let currentUrl = null;
+
+    function addFiles(files) {
+      const audioFiles = Array.from(files).filter(file =>
+        file.type.startsWith("audio/") ||
+        /\.(mp3|wav|flac|m4a|aac|ogg|opus|wma|aiff)$/i.test(file.name)
+      );
+
+      const existing = new Set(
+        tracks.map(track =>
+          track.file.name + "|" + track.file.size + "|" +
+          track.file.lastModified + "|" + track.path
+        )
+      );
+
+      for (const file of audioFiles) {
+        const path = file.webkitRelativePath || file.name;
+        const key = file.name + "|" + file.size + "|" +
+          file.lastModified + "|" + path;
+
+        if (!existing.has(key)) {
+          tracks.push({ file, path });
+          existing.add(key);
+        }
+      }
+
+      tracks.sort((a, b) =>
+        a.path.localeCompare(b.path, undefined, {
+          numeric: true,
+          sensitivity: "base"
+        })
+      );
+
+      renderTracks();
+    }
+
+    function renderTracks() {
+      const query = search.value.toLowerCase();
+
+      const filtered = tracks
+        .map((track, index) => ({ ...track, index }))
+        .filter(track => track.path.toLowerCase().includes(query));
+
+      playlist.replaceChildren();
+
+      status.textContent = tracks.length
+        ? `${tracks.length} songs in your library`
+        : "No music loaded yet. Select your music folder.";
+
+      if (!filtered.length && tracks.length) {
+        status.textContent = "No songs match your search.";
+      }
+
+      for (const track of filtered) {
+        const row = document.createElement("div");
+        row.className = "track" +
+          (track.index === currentIndex ? " active" : "");
+
+        const icon = document.createElement("div");
+        icon.className = "track-icon";
+        icon.textContent = "♫";
+
+        const info = document.createElement("div");
+        info.className = "track-info";
+
+        const name = document.createElement("div");
+        name.className = "track-name";
+        name.textContent = track.file.name;
+
+        const folder = document.createElement("div");
+        folder.className = "track-folder";
+        folder.textContent = track.path.includes("/")
+          ? track.path.substring(0, track.path.lastIndexOf("/"))
+          : "Music";
+
+        info.append(name, folder);
+        row.append(icon, info);
+
+        row.addEventListener("click", () => playTrack(track.index));
+        playlist.append(row);
+      }
+    }
+
+    function playTrack(index) {
+      if (index < 0 || index >= tracks.length) return;
+
+      currentIndex = index;
+      const track = tracks[index];
+
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+
+      currentUrl = URL.createObjectURL(track.file);
+      audio.src = currentUrl;
+      nowPlaying.textContent = "♫ " + track.file.name;
+
+      audio.play().catch(() => {
+        nowPlaying.textContent =
+          "Press Play to listen: " + track.file.name;
+      });
+
+      renderTracks();
+    }
+
+    folderInput.addEventListener("change", event => {
+      addFiles(event.target.files);
+      folderInput.value = "";
+    });
+
+    fileInput.addEventListener("change", event => {
+      addFiles(event.target.files);
+      fileInput.value = "";
+    });
+
+    search.addEventListener("input", renderTracks);
+
+    document.getElementById("shuffleButton")
+      .addEventListener("click", () => {
+        if (!tracks.length) {
+          status.textContent = "Select a music folder first.";
+          return;
+        }
+
+        let next = Math.floor(Math.random() * tracks.length);
+
+        if (tracks.length > 1 && next === currentIndex) {
+          next = (next + 1) % tracks.length;
+        }
+
+        playTrack(next);
+      });
+
+    audio.addEventListener("ended", () => {
+      if (currentIndex >= 0 && currentIndex < tracks.length - 1) {
+        playTrack(currentIndex + 1);
+      }
+    });
+
+    videoInput.addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      video.src = URL.createObjectURL(file);
+      video.hidden = false;
+      video.load();
+      video.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  </script>
+</body>
+</html>
